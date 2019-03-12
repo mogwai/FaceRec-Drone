@@ -5,6 +5,7 @@ import requests
 
 cnn_face_detector = dlib.get_frontal_face_detector()
 
+
 def detect(img):
     dets = cnn_face_detector(img, 1)
     arr = []
