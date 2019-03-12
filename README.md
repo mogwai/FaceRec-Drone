@@ -7,4 +7,4 @@ largest face in the view.
 
 ### Attributions
 
-face detection cnn model - dlib
+[Face Detection - dlib](http://dlib.net/face_detector.py.html)
