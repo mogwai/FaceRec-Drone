@@ -1,12 +1,9 @@
-from djitellopy import Tello
 import cv2
 import numpy as np
+
+from djitellopy import Tello
 from faces import detect
 from image import resize_image_arr
-import time
-from PIL import Image
-import datetime
-import os
 
 # Speed of the drone
 S = 20
@@ -16,7 +13,7 @@ UDOffset = 150
 dimensions = (960, 720)
 
 
-class FrontEnd(object):
+class FrontEnd:
 
     def __init__(self):
         # Init Tello object that interacts with the Tello drone
@@ -56,6 +53,12 @@ class FrontEnd(object):
         imgCount = 0
         OVERRIDE = False
         self.tello.get_battery()
+
+        # Safety Zone X
+        szX = 100
+
+        # Safety Zone Y
+        szY = 55
 
         while not should_stop:
             self.update()
@@ -183,8 +186,8 @@ class FrontEnd(object):
             faces = detect(frameRet)
 
             # These are our center dimensions
-            cWidth = int(dimensions[0]/2)
-            cHeight = int(dimensions[1]/2)
+            cWidth = int(dimensions[0] / 2)
+            cHeight = int(dimensions[1] / 2)
 
             # noFaces = len(faces) == 0
 
@@ -196,19 +199,19 @@ class FrontEnd(object):
                 fbStroke = 2
                 for (x, y, w, h) in faces:
 
-                    x = int(x*wR)
-                    y = int(y*hR)
-                    w = int(wR*w)
-                    h = int(h*hR)
+                    x = int(x * wR)
+                    y = int(y * hR)
+                    w = int(wR * w)
+                    h = int(h * hR)
 
                     # end coords are the end of the bounding box x & y
                     end_cord_x = x + w
                     end_cord_y = y + h
-                    end_size = w*2
+                    end_size = w * 2
 
                     # these are our target coordinates
-                    targ_cord_x = int((end_cord_x + x)/2)
-                    targ_cord_y = int((end_cord_y + y)/2) + UDOffset
+                    targ_cord_x = int((end_cord_x + x) / 2)
+                    targ_cord_y = int((end_cord_y + y) / 2) + UDOffset
 
                     # This calculates the vector from your face to the center of the screen
                     vTrue = np.array((cWidth, cHeight, 350))
@@ -268,7 +271,7 @@ class FrontEnd(object):
             cv2.circle(frameRet, (cWidth, cHeight), 10, (0, 0, 255), 2)
 
             dCol = lerp(np.array((0, 0, 255)), np.array(
-                (255, 255, 255)), tDistance+1/7)
+                (255, 255, 255)), tDistance + 1 / 7)
 
             if OVERRIDE:
                 show = "OVERRIDE: {}".format(oSpeed)
@@ -303,13 +306,11 @@ class FrontEnd(object):
 
 
 def lerp(a, b, c):
-    return a + c*(b-a)
+    return a + c * (b - a)
 
 
 def main():
     frontend = FrontEnd()
-
-    # run frontend
     frontend.run()
 
 

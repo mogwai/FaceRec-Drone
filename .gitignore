@@ -3,3 +3,4 @@
 *.caffemodel
 **/__pycache__/
 .vscode/
+.idea/

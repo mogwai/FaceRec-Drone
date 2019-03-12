@@ -1,7 +1,4 @@
-import sys
 import dlib
-import requests
-
 
 cnn_face_detector = dlib.get_frontal_face_detector()
 
