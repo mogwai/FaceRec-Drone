@@ -1,7 +1,7 @@
 from djitellopy import Tello
 import cv2
 import numpy as np
-from faces import detect 
+from faces import detect
 from image import resize_image_arr
 import time
 from PIL import Image
@@ -14,6 +14,7 @@ S2 = 5
 UDOffset = 150
 
 dimensions = (960, 720)
+
 
 class FrontEnd(object):
 
@@ -213,7 +214,6 @@ class FrontEnd(object):
                     vTrue = np.array((cWidth, cHeight, 350))
                     vTarget = np.array((targ_cord_x, targ_cord_y, end_size))
                     vDistance = vTrue - vTarget
-
 
                     # for turning
                     if vDistance[0] < -szX:
