@@ -7,11 +7,12 @@ from image import resize_image_arr
 
 # Speed of the drone
 S = 20
+F = 10 
 S2 = 5
 UDOffset = 150
+face_box_size = 350
 
 dimensions = (960, 720)
-
 
 class FrontEnd:
 
@@ -48,10 +49,10 @@ class FrontEnd:
             return
 
         frame_read = self.tello.get_frame_read()
-
         should_stop = False
         imgCount = 0
         OVERRIDE = False
+        tDistance = 1
         self.tello.get_battery()
 
         # Safety Zone X
@@ -214,7 +215,7 @@ class FrontEnd:
                     targ_cord_y = int((end_cord_y + y) / 2) + UDOffset
 
                     # This calculates the vector from your face to the center of the screen
-                    vTrue = np.array((cWidth, cHeight, 350))
+                    vTrue = np.array((cWidth, cHeight, face_box_size))
                     vTarget = np.array((targ_cord_x, targ_cord_y, end_size))
                     vDistance = vTrue - vTarget
 
@@ -237,12 +238,12 @@ class FrontEnd:
                         self.up_down_velocity = 0
 
                     # for forward back
-                    if vDistance[2] > 0:
-                        self.for_back_velocity = S + F
-                    elif vDistance[2] < 0:
-                        self.for_back_velocity = -S - F
-                    else:
+                    vel = vDistance[2]/face_box_size
+                    
+                    if vDistance[2] == 0:
                         self.for_back_velocity = 0
+                    else:
+                        self.for_back_velocity = int((S + F)*vel)
 
                     # Draw the face bounding box
                     cv2.rectangle(frameRet, (x, y), (end_cord_x,
@@ -262,13 +263,13 @@ class FrontEnd:
 
                 # if there are no faces detected, don't do anything
                 if len(faces) < 1:
-                    self.yaw_velocity = 0
+                    self.yaw_velocity = S*2
                     self.up_down_velocity = 0
                     self.for_back_velocity = 0
                     print("NO TARGET")
 
             # Draw the center of screen circle, this is what the drone tries to match with the target coords
-            cv2.circle(frameRet, (cWidth, cHeight), 10, (0, 0, 255), 2)
+            cv2.circle(frame, (cWidth, cHeight), 10, (0, 0, 255), 2)
 
             dCol = lerp(np.array((0, 0, 255)), np.array(
                 (255, 255, 255)), tDistance + 1 / 7)
@@ -280,11 +281,11 @@ class FrontEnd:
                 show = "AI: {}".format(str(tDistance))
 
             # Draw the distance choosen
-            cv2.putText(frameRet, show, (32, 664),
+            cv2.putText(frame, show, (32, 664),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, dCol, 2)
 
             # Display the resulting frame
-            cv2.imshow('Tello Tracking...', frameRet)
+            cv2.imshow('Tello Tracking...', frame)
 
         # On exit, print the battery
         self.tello.get_battery()
