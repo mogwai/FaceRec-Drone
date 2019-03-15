@@ -31,46 +31,55 @@ class FrontEnd:
             print("Could not start video stream")
             return
 
+        self.frame_read = self.tello.get_frame_read()
+        self.pilot = Pilot(self.tello, self)
+        self.key_ctrl = KeyboardController(self.tello)
+
     def run(self):
-
-        frame_read = self.tello.get_frame_read()
-        should_stop = False
         self.battery()
-
-        while not should_stop:
-            self.tello.send_rc_control()
-
-            if frame_read.stopped:
-                frame_read.stop()
-                break
-
-            frame = frame_read.frame
-            
-            # Draw the face bounding box
-            cv2.rectangle(frame, (x, y), (end_cord_x,
-                                          end_cord_y), fbCol, fbStroke)
-
-            # Draw the target as a circle
-            cv2.circle(frame, (targ_cord_x, targ_cord_y),
-                       10, (0, 255, 0), 2)
-
-            # Draw the safety zone
-            cv2.rectangle(frame, (targ_cord_x - szX, targ_cord_y - szY),
-                          (targ_cord_x + szX, targ_cord_y + szY), (0, 255, 0), fbStroke)
-
-            # Draw the center of screen circle
-            cv2.circle(frame, (F_WIDTH/2, F_HEIGHT/2), 10, (0, 0, 255), 2)
-
-            # Display the resulting frame
-            cv2.imshow('Hide n Seek', frame)
+        try:
+            while 1:
+                self.draw()
+        except:
+            pass
 
         self.exit()
+
+    def draw(self):
+        self.tello.send_rc_control()
+
+        if self.frame_read.stopped:
+            self.frame_read.stop()
+            raise "Frame stopped"
+
+        frame = self.frame_read.frame
+        self.key_ctrl.check_key()
+        self.pilot.on_frame(frame)
+
+        # Draw the center of screen circle
+        cv2.circle(frame, (F_WIDTH/2, F_HEIGHT/2), 10, (0, 0, 255), 2)
+
+        # Display the resulting frame
+        cv2.imshow('Hide n Seek', frame)
+
+    def draw_box(self, frame, x, y, end_cord_x, end_cord_y, target_x, target_y):
+        # Draw the face bounding box
+        cv2.rectangle(frame, (x, y), (end_cord_x,
+                                      end_cord_y), fbCol, fbStroke)
+
+        # Draw the target as a circle
+        cv2.circle(frame, (target_x, target_y),
+                   10, (0, 255, 0), 2)
+
+        # Draw the safety zone
+        cv2.rectangle(frame, (target_x - szX, target_y - szY),
+                      (target_x + szX, target_y + szY), (0, 255, 0), fbStroke)
 
     def battery(self):
         return self.tello.get_battery()[:2]
 
     def exit(self):
-          # On exit, print the battery
+            # On exit, print the battery
         self.tello.get_battery()
 
         # When everything done, release the capture

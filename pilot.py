@@ -13,8 +13,9 @@ class Pilot:
 
     last_face_seen = time.time()
 
-    def __init__(self, tello):
+    def __init__(self, tello, ui):
         self.tello = tello
+        self.ui = ui
 
     def on_frame(self, frame):
         # These are our center dimensions
@@ -27,9 +28,11 @@ class Pilot:
         wR = F_WIDTH / CROP_WIDTH
         hR = F_HEIGHT / im_height
 
-        for (x, y, w, h) in faces:
-            # Record that we've seen a face
+        # Record that we've seen a face
+        if len(faces) > 0:
             self.last_face_seen = time.time()
+
+        for (x, y, w, h) in faces:
 
             # Put coordinates back into original scale
             x = int(x * wR)
@@ -43,12 +46,12 @@ class Pilot:
             end_size = w * 2
 
             # these are our target coordinates
-            targ_cord_x = int((end_cord_x + x) / 2)
-            targ_cord_y = int((end_cord_y + y) / 2) + UDOffset
+            target_x = int((end_cord_x + x) / 2)
+            target_y = int((end_cord_y + y) / 2) + UDOffset
 
             # This calculates the vector from your face to the center of the screen
             vTrue = np.array((cWidth, cHeight, FBOX_Z))
-            vTarget = np.array((targ_cord_x, targ_cord_y, end_size))
+            vTarget = np.array((target_x, target_y, end_size))
             vDistance = vTrue - vTarget
 
             # for turning
@@ -75,13 +78,15 @@ class Pilot:
             else:
                 self.for_back_velocity = int((S + F)*vel)
 
-        # if there are no faces
+            self.ui.draw_box(frame, x, y, end_cord_x,
+                             end_cord_y, target_x, target_y)
+
         if len(faces) < 1:
             if self.last_face_seen < time.time() - (1000 * TIME_TIL_SEARCH):
                 self.yaw_velocity = S*3
                 height = int(self.tello.get_height().replace(
                     'ok', '').replace('dm', ''))
-                if height < 20:
+                if height < 10:
                     self.up_down_velocity = S
             else:
                 self.yaw_velocity = 0
