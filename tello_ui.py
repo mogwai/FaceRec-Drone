@@ -68,9 +68,8 @@ class FrontEnd:
                 frame_read.stop()
                 break
 
-            frame = cv2.cvtColor(frame_read.frame, cv2.COLOR_BGR2RGB)
-            frameRet = frame_read.frame
-
+            frame = frame_read.frame
+            frameRet = frame
             imgCount += 1
 
             # Listen for key presses
