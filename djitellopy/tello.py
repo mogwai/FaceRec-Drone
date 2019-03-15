@@ -7,6 +7,11 @@ from threading import Thread
 from djitellopy.decorators import accepts
 
 
+def printif(statement, string):
+    if statement:
+        print(string)
+
+
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
     Tello API documentation:
@@ -37,7 +42,7 @@ class Tello:
     stream_on = False
 
     def __init__(self, logging=True):
-        self.logging = True
+        self.logging = logging
         # To send comments
         self.address = (self.UDP_IP, self.UDP_PORT)
         self.clientSocket = socket.socket(socket.AF_INET,  # Internet
@@ -107,7 +112,7 @@ class Tello:
         if diff < self.TIME_BTW_COMMANDS:
             time.sleep(diff)
 
-        print('Send command: ' + command) if self.logging else 0
+        printif(self.logging, 'Send command: ' + command)
         timestamp = int(time.time() * 1000)
 
         self.clientSocket.sendto(command.encode('utf-8'), self.address)
@@ -117,7 +122,7 @@ class Tello:
                 print('Timeout exceed on command ' + command)
                 return False
 
-        print('Response: ' + str(self.response)) if self.logging else 0
+        printif(self.logging, 'Response: ' + str(self.response))
 
         response = self.response.decode('utf-8')
 
@@ -151,7 +156,8 @@ class Tello:
         """
         # Commands very consecutive makes the drone not respond to them. So wait at least self.TIME_BTW_COMMANDS seconds
 
-        print('Send command (no expect response): ' + command)
+        printif(self.logging, 'Send command (no expect response): ' +
+              command)
         self.clientSocket.sendto(command.encode('utf-8'), self.address)
 
     @accepts(command=str)
