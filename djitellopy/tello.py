@@ -28,9 +28,16 @@ class Tello:
     cap = None
     background_frame_read = None
 
+    # Velocities
+    left_right_velocity = 0
+    forward_backward_velocity = 0
+    up_down_velocity = 0
+    yaw_velocity = 0
+
     stream_on = False
 
-    def __init__(self):
+    def __init__(self, logging=True):
+        self.logging = True
         # To send comments
         self.address = (self.UDP_IP, self.UDP_PORT)
         self.clientSocket = socket.socket(socket.AF_INET,  # Internet
@@ -50,8 +57,9 @@ class Tello:
         in order to not block the main thread."""
         while True:
             try:
+                # buffer size is 1024 bytes
                 self.response, _ = self.clientSocket.recvfrom(
-                    1024)  # buffer size is 1024 bytes
+                    1024)
             except Exception as e:
                 print(e)
                 break
@@ -451,8 +459,7 @@ class Tello:
 
     last_rc_control_sent = 0
 
-    @accepts(left_right_velocity=int, forward_backward_velocity=int, up_down_velocity=int, yaw_velocity=int)
-    def send_rc_control(self, left_right_velocity, forward_backward_velocity, up_down_velocity, yaw_velocity):
+    def send_rc_control(self):
         """Send RC control via four channels. Command is sent every self.TIME_BTW_RC_CONTROL_COMMANDS seconds.
         Arguments:
             left_right_velocity: -100~100 (left/right)
@@ -466,8 +473,11 @@ class Tello:
             pass
         else:
             self.last_rc_control_sent = int(time.time() * 1000)
-            return self.send_command_without_return('rc %s %s %s %s' % (left_right_velocity, forward_backward_velocity,
-                                                                        up_down_velocity, yaw_velocity))
+            return self.send_command_without_return('rc %s %s %s %s' % (
+                self.left_right_velocity,
+                self.forward_backward_velocity,
+                self.up_down_velocity, self.yaw_velocity)
+            )
 
     def set_wifi_with_ssid_password(self):
         """Set Wi-Fi with SSID password.
