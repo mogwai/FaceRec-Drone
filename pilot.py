@@ -1,4 +1,4 @@
-from constants import F_WIDTH, F_HEIGHT, CROP_WIDTH, TIME_TIL_SEARCH, FBOX_Z, S, F, szX, szY, UDOffset
+from constants import F_WIDTH, F_HEIGHT, CROP_WIDTH, TIME_TIL_SEARCH, FBOX_Z
 import numpy as np
 
 from faces import detect
@@ -19,8 +19,8 @@ class Pilot:
 
     def on_frame(self, frame):
         # These are our center dimensions
-        cWidth = int(F_WIDTH / 2)
-        cHeight = int(F_HEIGHT / 2)
+        cWidth = F_WIDTH // 2
+        cHeight = F_HEIGHT // 2
 
         frameRet, im_height = resize_image_arr(frame, CROP_WIDTH)
         faces = detect(frameRet)
@@ -36,61 +36,45 @@ class Pilot:
 
             # Put coordinates back into original scale
             x = int(x * wR)
+            w = int(w * wR)
             y = int(y * hR)
-            w = int(wR * w)
             h = int(h * hR)
 
-            # end coords are the end of the bounding box x & y
-            end_cord_x = x + w
-            end_cord_y = y + h
-            end_size = w * 2
-
-            # these are our target coordinates
-            target_x = int((end_cord_x + x) / 2)
-            target_y = int((end_cord_y + y) / 2) + UDOffset
-
-            # This calculates the vector from your face to the center of the screen
-            vTrue = np.array((cWidth, cHeight, FBOX_Z))
-            vTarget = np.array((target_x, target_y, end_size))
-            vDistance = vTrue - vTarget
-
             # for turning
-            if vDistance[0] < -szX:
-                self.yaw_velocity = S
-            elif vDistance[0] > szX:
-                self.yaw_velocity = -S
-            else:
-                self.yaw_velocity = 0
+            yawR = (x - cWidth) / cWidth
+            self.tello.yaw_velocity = int(
+                50 * yawR)
 
-            # for up & down
-            if vDistance[1] > szY:
-                self.up_down_velocity = S
-            elif vDistance[1] < -szY:
-                self.up_down_velocity = -S
-            else:
-                self.up_down_velocity = 0
+            # We want the height to be relative to our ideal position
+            heightR = - (y - (cHeight-100)) / cHeight
+            self.tello.up_down_velocity = int(40 * heightR)
 
-            # for forward back
-            vel = vDistance[2]/FBOX_Z
+            # We want the width to be our ideal width (Hacky depth perception)
+            forwardR = (FBOX_Z - w) / FBOX_Z
+            self.tello.forward_backward_velocity = int(50 * forwardR)
 
-            if vDistance[2] == 0:
-                self.for_back_velocity = 0
-            else:
-                self.for_back_velocity = int((S + F)*vel)
+            print("Position", (x, y, w))
+            print("Target", (cWidth, cHeight-100, FBOX_Z))
+            print("DISANCE", (x - cWidth,
+                              y - cHeight, FBOX_Z - w))
+            print("RATIOS", (yawR, heightR, forwardR))
+            print("VELOCITIES",
+                  self.tello.yaw_velocity,
+                  self.tello.up_down_velocity,
+                  self.tello.forward_backward_velocity)
 
-            self.ui.draw_box(frame, x, y, end_cord_x,
-                             end_cord_y, target_x, target_y)
+            # Draw box on UI Frame
+            self.ui.draw_box(frame, x, y, x+w, y+h, cWidth, cHeight)
 
         if len(faces) < 1:
             if self.last_face_seen < time.time() - (1000 * TIME_TIL_SEARCH):
-                self.yaw_velocity = S*3
+                self.tello.yaw_velocity = S*3
                 height = int(self.tello.get_height().replace(
                     'ok', '').replace('dm', ''))
                 if height < 10:
-                    self.up_down_velocity = S
+                    self.tello.up_down_velocity = S
             else:
-                self.yaw_velocity = 0
-                self.up_down_velocity = 0
+                self.tello.yaw_velocity = 0
+                self.tello.up_down_velocity = 0
 
-            self.for_back_velocity = 0
-            print("NO TARGET")
+            self.tello.forward_backward_velocity = 0

@@ -22,7 +22,7 @@ class Tello:
     UDP_PORT = 8889
     RESPONSE_TIMEOUT = 0.5  # in seconds
     TIME_BTW_COMMANDS = 0.5  # in seconds
-    TIME_BTW_RC_CONTROL_COMMANDS = 0.5  # in seconds
+    TIME_BTW_RC_CONTROL_COMMANDS = 0.1  # in seconds
     last_received_command = time.time()
 
     # Video stream, server socket
