@@ -1,5 +1,5 @@
 from constants import F_WIDTH, F_HEIGHT, CROP_WIDTH, TIME_TIL_SEARCH, FBOX_Z, S, F, szX, szY, UDOffset
-import np
+import numpy as np
 
 from faces import detect
 from image import resize_image_arr
