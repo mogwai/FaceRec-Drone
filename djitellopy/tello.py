@@ -7,6 +7,11 @@ from threading import Thread
 from djitellopy.decorators import accepts
 
 
+def printif(statement, string):
+    if statement:
+        print(string)
+
+
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
     Tello API documentation:
@@ -17,7 +22,7 @@ class Tello:
     UDP_PORT = 8889
     RESPONSE_TIMEOUT = 0.5  # in seconds
     TIME_BTW_COMMANDS = 0.5  # in seconds
-    TIME_BTW_RC_CONTROL_COMMANDS = 0.5  # in seconds
+    TIME_BTW_RC_CONTROL_COMMANDS = 0.1  # in seconds
     last_received_command = time.time()
 
     # Video stream, server socket
@@ -28,9 +33,16 @@ class Tello:
     cap = None
     background_frame_read = None
 
+    # Velocities
+    left_right_velocity = 0
+    forward_backward_velocity = 0
+    up_down_velocity = 0
+    yaw_velocity = 0
+
     stream_on = False
 
-    def __init__(self):
+    def __init__(self, logging=True):
+        self.logging = logging
         # To send comments
         self.address = (self.UDP_IP, self.UDP_PORT)
         self.clientSocket = socket.socket(socket.AF_INET,  # Internet
@@ -50,8 +62,9 @@ class Tello:
         in order to not block the main thread."""
         while True:
             try:
+                # buffer size is 1024 bytes
                 self.response, _ = self.clientSocket.recvfrom(
-                    1024)  # buffer size is 1024 bytes
+                    1024)
             except Exception as e:
                 print(e)
                 break
@@ -99,7 +112,7 @@ class Tello:
         if diff < self.TIME_BTW_COMMANDS:
             time.sleep(diff)
 
-        print('Send command: ' + command)
+        printif(self.logging, 'Send command: ' + command)
         timestamp = int(time.time() * 1000)
 
         self.clientSocket.sendto(command.encode('utf-8'), self.address)
@@ -109,7 +122,7 @@ class Tello:
                 print('Timeout exceed on command ' + command)
                 return False
 
-        print('Response: ' + str(self.response))
+        printif(self.logging, 'Response: ' + str(self.response))
 
         response = self.response.decode('utf-8')
 
@@ -143,7 +156,8 @@ class Tello:
         """
         # Commands very consecutive makes the drone not respond to them. So wait at least self.TIME_BTW_COMMANDS seconds
 
-        print('Send command (no expect response): ' + command)
+        printif(self.logging, 'Send command (no expect response): ' +
+              command)
         self.clientSocket.sendto(command.encode('utf-8'), self.address)
 
     @accepts(command=str)
@@ -451,8 +465,7 @@ class Tello:
 
     last_rc_control_sent = 0
 
-    @accepts(left_right_velocity=int, forward_backward_velocity=int, up_down_velocity=int, yaw_velocity=int)
-    def send_rc_control(self, left_right_velocity, forward_backward_velocity, up_down_velocity, yaw_velocity):
+    def send_rc_control(self):
         """Send RC control via four channels. Command is sent every self.TIME_BTW_RC_CONTROL_COMMANDS seconds.
         Arguments:
             left_right_velocity: -100~100 (left/right)
@@ -466,8 +479,11 @@ class Tello:
             pass
         else:
             self.last_rc_control_sent = int(time.time() * 1000)
-            return self.send_command_without_return('rc %s %s %s %s' % (left_right_velocity, forward_backward_velocity,
-                                                                        up_down_velocity, yaw_velocity))
+            return self.send_command_without_return('rc %s %s %s %s' % (
+                self.left_right_velocity,
+                self.forward_backward_velocity,
+                self.up_down_velocity, self.yaw_velocity)
+            )
 
     def set_wifi_with_ssid_password(self):
         """Set Wi-Fi with SSID password.

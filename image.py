@@ -4,8 +4,8 @@ from PIL import Image
 
 def resize_image_arr(arr, width=500):
     im = Image.fromarray(arr)
-    im = resize_image(im, width)
-    return np.asarray(im, dtype="uint8")
+    im, hsize = resize_image(im, width)
+    return np.asarray(im, dtype="uint8"), hsize
 
 
 def resize_image(im, width=500):

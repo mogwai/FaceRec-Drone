@@ -11,6 +11,10 @@ largest face in the view.
 1. Connect to Trello with Wifi
 2. Run `python tello_ui.py`
 
+### Features
+
+- Will search for nearby faces if none are present
+
 ### Attributions
 
 [Face Detection - dlib](http://dlib.net/face_detector.py.html)
