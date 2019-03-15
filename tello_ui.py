@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import cv2
 import numpy as np
 
@@ -7,12 +9,18 @@ from image import resize_image_arr
 
 # Speed of the drone
 S = 20
-F = 10 
+F = 10
 S2 = 5
+tDistance = 1
 UDOffset = 150
 face_box_size = 350
+fbCol = (255, 0, 0)  # BGR 0-255
+fbStroke = 2
+
+TIME_TIL_SEARCH = 3
 
 dimensions = (960, 720)
+
 
 class FrontEnd:
 
@@ -25,9 +33,10 @@ class FrontEnd:
         self.left_right_velocity = 0
         self.up_down_velocity = 0
         self.yaw_velocity = 0
-        self.speed = 10
 
         self.send_rc_control = False
+
+        self.last_face_seen = datetime.now()
 
     def run(self):
 
@@ -52,8 +61,7 @@ class FrontEnd:
         should_stop = False
         imgCount = 0
         OVERRIDE = False
-        tDistance = 1
-        self.tello.get_battery()
+        self.battery()
 
         # Safety Zone X
         szX = 100
@@ -195,10 +203,12 @@ class FrontEnd:
             if not OVERRIDE:
                 wR = dimensions[0] / basewidth
                 hR = dimensions[1] / hsize
-                fbCol = (255, 0, 0)  # BGR 0-255
-                fbStroke = 2
-                for (x, y, w, h) in faces:
 
+                for (x, y, w, h) in faces:
+                    # Record that we've seen a face
+                    self.last_face_seen = datetime.now()
+
+                    # Put coordinates back into original scale
                     x = int(x * wR)
                     y = int(y * hR)
                     w = int(wR * w)
@@ -221,10 +231,8 @@ class FrontEnd:
                     # for turning
                     if vDistance[0] < -szX:
                         self.yaw_velocity = S
-                        # self.left_right_velocity = S2
                     elif vDistance[0] > szX:
                         self.yaw_velocity = -S
-                        # self.left_right_velocity = -S2
                     else:
                         self.yaw_velocity = 0
 
@@ -238,7 +246,7 @@ class FrontEnd:
 
                     # for forward back
                     vel = vDistance[2]/face_box_size
-                    
+
                     if vDistance[2] == 0:
                         self.for_back_velocity = 0
                     else:
@@ -256,13 +264,13 @@ class FrontEnd:
                     cv2.rectangle(frameRet, (targ_cord_x - szX, targ_cord_y - szY),
                                   (targ_cord_x + szX, targ_cord_y + szY), (0, 255, 0), fbStroke)
 
-                    # Draw the estimated drone vector position in relation to face bounding box
-                    cv2.putText(frameRet, str(vDistance), (0, 64),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-
                 # if there are no faces detected, don't do anything
                 if len(faces) < 1:
-                    self.yaw_velocity = S*2
+                    if self.last_face_seen < datetime.now() - timedelta(seconds=TIME_TIL_SEARCH):
+                        self.yaw_velocity = S*2
+                    else:
+                        self.yaw_velocity = 0
+                    
                     self.up_down_velocity = 0
                     self.for_back_velocity = 0
                     print("NO TARGET")
@@ -300,9 +308,11 @@ class FrontEnd:
 
     def update(self):
         """ Update routine. Send velocities to Tello."""
-        if self.send_rc_control:
-            self.tello.send_rc_control(self.left_right_velocity, self.for_back_velocity, self.up_down_velocity,
-                                       self.yaw_velocity)
+        if not self.send_rc_control:
+            return
+
+        self.tello.send_rc_control(self.left_right_velocity, self.for_back_velocity, self.up_down_velocity,
+                                   self.yaw_velocity)
 
 
 def lerp(a, b, c):
