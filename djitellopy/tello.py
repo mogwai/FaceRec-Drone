@@ -107,7 +107,7 @@ class Tello:
         if diff < self.TIME_BTW_COMMANDS:
             time.sleep(diff)
 
-        print('Send command: ' + command)
+        print('Send command: ' + command) if self.logging else 0
         timestamp = int(time.time() * 1000)
 
         self.clientSocket.sendto(command.encode('utf-8'), self.address)
@@ -117,7 +117,7 @@ class Tello:
                 print('Timeout exceed on command ' + command)
                 return False
 
-        print('Response: ' + str(self.response))
+        print('Response: ' + str(self.response)) if self.logging else 0
 
         response = self.response.decode('utf-8')
 

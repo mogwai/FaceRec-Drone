@@ -12,7 +12,7 @@ class FrontEnd:
 
     def __init__(self):
         # Init Tello object that interacts with the Tello drone
-        self.tello = Tello()
+        self.tello = Tello(logging=False)
 
         if not self.tello.connect():
             print("Tello not connected")
