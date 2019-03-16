@@ -1,6 +1,6 @@
-import dlib
+from dlib import get_frontal_face_detector
 
-cnn_face_detector = dlib.get_frontal_face_detector()
+cnn_face_detector = get_frontal_face_detector()
 
 
 def detect(img):
