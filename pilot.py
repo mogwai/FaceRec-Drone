@@ -27,7 +27,8 @@ class Pilot:
             self.last_face_seen = time.time()
 
         if len(faces) < 1:
-            if self.last_face_seen < time.time() - (1000 * TIME_TIL_SEARCH):
+            print(time.time() - self.last_face_seen)
+            if time.time() - self.last_face_seen >= TIME_TIL_SEARCH:
                 self.start_search()
             else:
                 self.tello.yaw_velocity = 0
@@ -38,30 +39,33 @@ class Pilot:
 
         biggest = None
         maxArea = 0
+        wR = F_WIDTH / CROP_WIDTH
+        hR = F_HEIGHT / im_height
 
         for i in range(len(faces)):
-            (_, __, w, h) = faces[i]
+            (x, y, w, h) = faces[i]
+
+            # Put coordinates back into original scale
+            x = int(x * wR)
+            w = int(w * wR)
+            y = int(y * hR)
+            h = int(h * hR)
+            faces[i] = (x, y, w, h)
+
             if w * h > maxArea:
                 maxArea = w * h
                 biggest = faces[i]
 
-        self.move_to_face(*biggest, im_height)
+        self.move_to_face(*biggest)
 
         # Draw boxes on UI Frame
         for (x, y, w, h) in faces:
             self.ui.draw_box(frame, x, y, x+w, y+h,
                              F_WIDTH // 2, F_HEIGHT // 2)
 
-    def move_to_face(self, x, y, w, h, im_height):
+    def move_to_face(self, x, y, w, h):
         cWidth = F_WIDTH // 2
         cHeight = F_HEIGHT // 2
-        wR = F_WIDTH / CROP_WIDTH
-        hR = F_HEIGHT / im_height
-
-        # Put coordinates back into original scale
-        x = int(x * wR)
-        w = int(w * wR)
-        y = int(y * hR)
 
         # Turning
         yawR = (x - cWidth) / cWidth
@@ -77,8 +81,5 @@ class Pilot:
         self.tello.forward_backward_velocity = int(50 * forwardR)
 
     def start_search(self):
-        self.tello.yaw_velocity = 50*3
-        height = int(self.tello.get_height().replace(
-            'ok', '').replace('dm', ''))
-        if height < 10:
-            self.tello.up_down_velocity = 40
+        print('Searching')
+        self.tello.yaw_velocity = 70
