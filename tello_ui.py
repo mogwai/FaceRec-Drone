@@ -32,11 +32,8 @@ class FrontEnd:
 
     def run(self):
         self.tello.get_battery()
-        # try:
         while 1:
             self.draw()
-        # except Exception as e:
-        #     print(e)
 
         self.exit()
 

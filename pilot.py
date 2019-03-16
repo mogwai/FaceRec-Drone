@@ -1,17 +1,18 @@
-from constants import F_WIDTH, F_HEIGHT, CROP_WIDTH, TIME_TIL_SEARCH, FBOX_Z
+from constants import F_WIDTH, F_HEIGHT, CROP_WIDTH, TIME_TIL_SEARCH, FBOX_Z, NUM_FACES
 import numpy as np
 
 from faces import detect
 from image import resize_image_arr
 import time
+from memory import LimitedMemory
 
 
 class Pilot:
     """
     Handles the controls for the drone
     """
-
     last_face_seen = time.time()
+    _face_memory = LimitedMemory(NUM_FACES)
 
     def __init__(self, tello, ui):
         self.tello = tello
@@ -27,7 +28,6 @@ class Pilot:
             self.last_face_seen = time.time()
 
         if len(faces) < 1:
-            print(time.time() - self.last_face_seen)
             if time.time() - self.last_face_seen >= TIME_TIL_SEARCH:
                 self.start_search()
             else:
@@ -56,6 +56,9 @@ class Pilot:
                 maxArea = w * h
                 biggest = faces[i]
 
+            mem = np.array([*faces[i], time.time()])
+            self._face_memory.append(mem)
+
         self.move_to_face(*biggest)
 
         # Draw boxes on UI Frame
@@ -81,5 +84,44 @@ class Pilot:
         self.tello.forward_backward_velocity = int(50 * forwardR)
 
     def start_search(self):
-        print('Searching')
-        self.tello.yaw_velocity = 70
+        # Basic level of searching
+        self.tello.yaw_velocity = 65
+        arr = []
+        memory = np.array(self._face_memory)
+        
+        # Use basic search (Spinning)
+        if not len(memory):
+            return
+        
+        # Filter by the times that 
+        memory = memory[np.where([time.time() - i[-1] < 8 for i in memory])]
+        
+        # Use basic search (Spinning)
+        if not len(memory):
+            return
+        
+        movX = self.tello.yaw_velocity
+        movY = self.tello.up_down_velocity
+        newpos = memory - [movX, movY, 0, 0, 0]
+
+        # Work out the vector to the next position as long as its nearby
+        newpos = newpos[::-1]
+        for i in range(len(newpos)-1):
+            p = newpos[i]
+            p1 = newpos[i + 1]
+            dist = np.linalg.norm(p1 - p)
+            if dist <= 100:
+                arr.append(p1 - p)
+            else:
+                break
+
+        # Use basic search (Spinning)
+        if not len(arr):
+            return
+
+        # Get average vector
+        avgV = np.mean(arr, axis=1)
+        
+        # Apply it to tello movement
+        self.tello.yaw_velocity = 65 * (avgV[0] / avgV[0])
+        self.tello.up_down_velocity = 30 * (avgV[1] / avgV[1])
