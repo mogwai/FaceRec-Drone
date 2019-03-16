@@ -53,16 +53,6 @@ class Pilot:
             forwardR = (FBOX_Z - w) / FBOX_Z
             self.tello.forward_backward_velocity = int(50 * forwardR)
 
-            print("Position", (x, y, w))
-            print("Target", (cWidth, cHeight-100, FBOX_Z))
-            print("DISANCE", (x - cWidth,
-                              y - cHeight, FBOX_Z - w))
-            print("RATIOS", (yawR, heightR, forwardR))
-            print("VELOCITIES",
-                  self.tello.yaw_velocity,
-                  self.tello.up_down_velocity,
-                  self.tello.forward_backward_velocity)
-
             # Draw box on UI Frame
             self.ui.draw_box(frame, x, y, x+w, y+h, cWidth, cHeight)
 
