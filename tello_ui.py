@@ -5,13 +5,13 @@ from constants import (CROP_WIDTH, F_HEIGHT, F_WIDTH, FBOX_Z, fbCol, fbStroke)
 from djitellopy import Tello
 from keyboard import KeyboardController
 from pilot import Pilot
-
+from ml.depth import predict_depth
 
 class FrontEnd:
 
     def __init__(self):
         # Init Tello object that interacts with the Tello drone
-        tello = Tello(logging=True)
+        tello = Tello(logging=False)
         self.tello = tello
         if not self.tello.connect():
             raise Exception("Tello not connected")
@@ -44,23 +44,25 @@ class FrontEnd:
             self.frame_read.stop()
 
         frame = self.frame_read.frame
-        if not self.key_ctrl.check_key():
-            self.pilot.on_frame(frame)
+        np.save('frame', frame)
+        depth = predict_depth(frame)
+        print(depth.min()/25.5)
+
+        # TODO add some delay here to allow user to control 
+        if not self.key_ctrl.check_key(): 
+            self.pilot.on_frame(frame, depth)
 
         # Draw the center of screen circle
-        cv2.circle(frame, (F_WIDTH//2, F_HEIGHT//2), 10, (0, 0, 255), 2)
+        cv2.circle(depth, (220//2, 220//2), 10, (0, 0, 255), 2)
 
         # Display the resulting frame
-        cv2.imshow('Hide n Seek', frame)
+        cv2.imshow('Hide n Seek', depth)
+        cv2.imshow('Real', frame)
 
     def draw_box(self, frame, x, y, end_cord_x, end_cord_y, target_x, target_y):
         # Draw the face bounding box
         cv2.rectangle(frame, (x, y), (end_cord_x,
                                       end_cord_y), fbCol, fbStroke)
-
-        # Draw the target as a circle
-        cv2.circle(frame, (target_x, target_y),
-                   10, (0, 255, 0), 2)
 
     def exit(self):
             # On exit, print the battery

@@ -18,7 +18,7 @@ class Pilot:
         self.tello = tello
         self.ui = ui
 
-    def on_frame(self, frame):
+    def on_frame(self, frame, depth):
         # These are our center dimensions
         frameRet, im_height = resize_image_arr(frame, CROP_WIDTH)
         faces = detect(frameRet)
