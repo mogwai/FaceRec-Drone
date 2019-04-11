@@ -6,6 +6,6 @@ fbCol = (255, 0, 0)
 fbStroke = 2
 TIME_TIL_SEARCH = 2
 # The width to crop the image by before detecting faces
-CROP_WIDTH = 500
+CROP_WIDTH = 220
 # Number of faces to remember
 NUM_FACES = 5
