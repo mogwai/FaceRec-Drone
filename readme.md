@@ -23,8 +23,8 @@ largest face in the view.
 ### TODO
 
 - [ ] Subroutine for sending RC Commands
-- [ ] Store recently seen faces and use to move drone in search mode
-- [ ] Basic search mode
+- [x] Store recently seen faces and use to move drone in search mode
+- [x] Basic search mode
 - [ ] Make sure the height is reasonable
 - [ ] Reconnection Timeout
-- [ ] Depth Perception Model
+- [x] Depth Perception Model
